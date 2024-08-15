@@ -7,19 +7,30 @@ type taskPromised[T any] struct {
 }
 
 func Map[T, U any](ctx context.Context, tsk Task[T], mapper func(data T) (U, error)) Task[U] {
-	promised := NewTask(ctx, func() (result U, err error) {
-		var resolved T
-		resolved, err = tsk.Await()
-		if err != nil {
+	promisedChan := make(chan Task[U])
+
+	go func() {
+		promised := NewTask(ctx, func() (result U, err error) {
+			var resolved T
+			resolved, err = tsk.Await()
+			if err != nil {
+				return
+			}
+			result, err = mapper(resolved)
+
 			return
+		})
+
+		promisedChan <- promised
+	}()
+
+	select {
+	case promised := <-promisedChan:
+		return &taskPromised[U]{
+			promised: promised,
 		}
-		result, err = mapper(resolved)
-
-		return
-	})
-
-	return &taskPromised[U]{
-		promised: promised,
+	case <-tsk.GetContext().Done():
+		return newErrTask[U](tsk.GetContext(), ErrTaskContextCancelled)
 	}
 }
 
@@ -33,4 +44,8 @@ func (t *taskPromised[T]) Await() (res T, err error) {
 
 func (t *taskPromised[T]) Subscribe(cb func(data T, err error)) {
 	go cb(t.Await())
+}
+
+func (t *taskPromised[T]) GetContext() context.Context {
+	return t.GetContext()
 }

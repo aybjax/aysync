@@ -10,22 +10,26 @@ import (
 
 type task[T any] struct {
 	retriever func() (T, error)
+	ctx       context.Context
 }
 
 func NewTask[T any](ctx context.Context, f func() (T, error)) Task[T] {
 	if ctx == nil {
 		ctx = context.TODO()
 	}
+	var cancelFnx context.CancelFunc
+	ctx, cancelFnx = context.WithCancel(ctx)
 
-	once := task[T]{}.createOnceFunc(ctx, f)
+	once := task[T]{}.createOnceFunc(ctx, cancelFnx, f)
 	go once()
 
 	return &task[T]{
 		retriever: once,
+		ctx:       ctx,
 	}
 }
 
-func (t task[T]) createOnceFunc(ctx context.Context, f func() (T, error)) func() (T, error) {
+func (t task[T]) createOnceFunc(ctx context.Context, cancelFnx context.CancelFunc, f func() (T, error)) func() (T, error) {
 	once := sync.OnceValues(func() (T, error) {
 		funcRes := make(chan *taskResult[T])
 		doneRes := make(chan *taskResult[T])
@@ -59,6 +63,9 @@ func (t task[T]) createOnceFunc(ctx context.Context, f func() (T, error)) func()
 		go func() {
 			select {
 			case result := <-funcRes:
+				if result.err != nil {
+					cancelFnx()
+				}
 				doneRes <- result
 			case <-time.After(defaultTimeout):
 				doneRes <- &taskResult[T]{
@@ -85,4 +92,8 @@ func (t *task[T]) Await() (T, error) {
 
 func (t *task[T]) Subscribe(cb func(data T, err error)) {
 	go cb(t.Await())
+}
+
+func (t *task[T]) GetContext() context.Context {
+	return t.ctx
 }

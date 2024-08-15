@@ -198,3 +198,22 @@ func TestTask_ConcurrentCalls(t *testing.T) {
 		}
 	}
 }
+
+func TestTask_GetContext(t *testing.T) {
+	longFunction := func() (int, error) {
+		return 0, errors.New("any error")
+	}
+
+	task := NewTask(nil, longFunction)
+	ctx := task.GetContext()
+	task2 := NewTask(ctx, longFunction)
+
+	select {
+	case <-ctx.Done():
+		break
+	case <-time.Tick(time.Second * 2):
+		t.Error("context is not cancelled")
+	}
+	_, err := task2.Await()
+	require.Error(t, err, ErrTaskContextCancelled.Error())
+}

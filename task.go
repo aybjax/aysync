@@ -1,6 +1,7 @@
 package aysync
 
 import (
+	"context"
 	"errors"
 	"time"
 )
@@ -25,4 +26,5 @@ type taskResult[T any] struct {
 type Task[T any] interface {
 	Await() (T, error)
 	Subscribe(cb func(data T, err error))
+	GetContext() context.Context
 }
