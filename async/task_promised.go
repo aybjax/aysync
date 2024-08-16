@@ -126,7 +126,7 @@ func (t *taskPromised[T]) Subscribe(cb func(data T, err error)) {
 }
 
 func (t *taskPromised[T]) GetContext() context.Context {
-	return t.GetContext()
+	return t.promised.GetContext()
 }
 
 func (t *taskPromised[T]) GetError() error {
