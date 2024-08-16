@@ -34,6 +34,85 @@ func FMap[T, U any](ctx context.Context, tsk Task[T], mapper func(data T) (U, er
 	}
 }
 
+func FMap2[T1, T2, U any](ctx context.Context, tsk1 Task[T1], tsk2 Task[T2], mapper func(data1 T1, data2 T2) (U, error)) Task[U] {
+	promisedChan := make(chan Task[U])
+
+	go func() {
+		promised := NewTask(ctx, func() (result U, err error) {
+			var (
+				resolved1 T1
+				resolved2 T2
+			)
+			resolved1, err = tsk1.Await()
+			if err != nil {
+				return
+			}
+			resolved2, err = tsk2.Await()
+			if err != nil {
+				return
+			}
+			result, err = mapper(resolved1, resolved2)
+
+			return
+		})
+
+		promisedChan <- promised
+	}()
+
+	select {
+	case promised := <-promisedChan:
+		return &taskPromised[U]{
+			promised: promised,
+		}
+	case <-tsk1.GetContext().Done():
+		return NewErrTask[U](tsk1.GetContext(), ErrTaskContextCancelled)
+	case <-tsk2.GetContext().Done():
+		return NewErrTask[U](tsk2.GetContext(), ErrTaskContextCancelled)
+	}
+}
+
+func FMap3[T1, T2, T3, U any](ctx context.Context, tsk1 Task[T1], tsk2 Task[T2], tsk3 Task[T3], mapper func(data1 T1, data2 T2, data3 T3) (U, error)) Task[U] {
+	promisedChan := make(chan Task[U])
+
+	go func() {
+		promised := NewTask(ctx, func() (result U, err error) {
+			var (
+				resolved1 T1
+				resolved2 T2
+				resolved3 T3
+			)
+			resolved1, err = tsk1.Await()
+			if err != nil {
+				return
+			}
+			resolved2, err = tsk2.Await()
+			if err != nil {
+				return
+			}
+			resolved3, err = tsk3.Await()
+			if err != nil {
+				return
+			}
+			result, err = mapper(resolved1, resolved2, resolved3)
+
+			return
+		})
+
+		promisedChan <- promised
+	}()
+
+	select {
+	case promised := <-promisedChan:
+		return &taskPromised[U]{
+			promised: promised,
+		}
+	case <-tsk1.GetContext().Done():
+		return NewErrTask[U](tsk1.GetContext(), ErrTaskContextCancelled)
+	case <-tsk2.GetContext().Done():
+		return NewErrTask[U](tsk2.GetContext(), ErrTaskContextCancelled)
+	}
+}
+
 func (t *taskPromised[T]) Await() (res T, err error) {
 	if t.promised == nil {
 		err = ErrNilValueEncountered
