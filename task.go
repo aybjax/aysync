@@ -11,6 +11,7 @@ var (
 	ErrTaskTimeout          = errors.New("task took too long to complete")
 	ErrTaskContextCancelled = errors.New("context cancelled")
 	ErrNilValueEncountered  = errors.New("null value encountered")
+	ErrNilFuncEncountered   = errors.New("null value encountered")
 )
 
 const (
@@ -27,4 +28,5 @@ type Task[T any] interface {
 	Await() (T, error)
 	Subscribe(cb func(data T, err error))
 	GetContext() context.Context
+	GetError() error
 }

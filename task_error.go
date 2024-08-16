@@ -26,3 +26,7 @@ func (t *taskErr[T]) Subscribe(cb func(data T, err error)) {
 func (t *taskErr[T]) GetContext() context.Context {
 	return t.ctx
 }
+
+func (t *taskErr[T]) GetError() error {
+	return t.err
+}

@@ -97,3 +97,8 @@ func (t *task[T]) Subscribe(cb func(data T, err error)) {
 func (t *task[T]) GetContext() context.Context {
 	return t.ctx
 }
+
+func (t *task[T]) GetError() error {
+	_, err := t.retriever()
+	return err
+}
