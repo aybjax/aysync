@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -17,11 +18,12 @@ func NewTask[T any](ctx context.Context, f func() (T, error)) Task[T] {
 	if ctx == nil {
 		ctx = context.TODO()
 	}
+
 	var cancelFnx context.CancelFunc
 	ctx, cancelFnx = context.WithCancel(ctx)
-
 	once := task[T]{}.createOnceFunc(ctx, cancelFnx, f)
 	go once()
+	runtime.Gosched()
 
 	return &task[T]{
 		retriever: once,
@@ -87,6 +89,7 @@ func (t task[T]) createOnceFunc(ctx context.Context, cancelFnx context.CancelFun
 }
 
 func (t *task[T]) Await() (T, error) {
+	runtime.Gosched()
 	return t.retriever()
 }
 
