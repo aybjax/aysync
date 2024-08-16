@@ -1,4 +1,4 @@
-package aysync
+package async
 
 import "context"
 
@@ -8,7 +8,7 @@ type taskErr[T any] struct {
 	err  error
 }
 
-func newErrTask[T any](ctx context.Context, err error) Task[T] {
+func NewErrTask[T any](ctx context.Context, err error) Task[T] {
 	return &taskErr[T]{
 		ctx: ctx,
 		err: err,

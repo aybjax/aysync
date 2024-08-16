@@ -1,4 +1,4 @@
-package aysync
+package async
 
 import "context"
 
@@ -6,7 +6,7 @@ type taskPromised[T any] struct {
 	promised Task[T]
 }
 
-func Map[T, U any](ctx context.Context, tsk Task[T], mapper func(data T) (U, error)) Task[U] {
+func FMap[T, U any](ctx context.Context, tsk Task[T], mapper func(data T) (U, error)) Task[U] {
 	promisedChan := make(chan Task[U])
 
 	go func() {
@@ -30,7 +30,7 @@ func Map[T, U any](ctx context.Context, tsk Task[T], mapper func(data T) (U, err
 			promised: promised,
 		}
 	case <-tsk.GetContext().Done():
-		return newErrTask[U](tsk.GetContext(), ErrTaskContextCancelled)
+		return NewErrTask[U](tsk.GetContext(), ErrTaskContextCancelled)
 	}
 }
 

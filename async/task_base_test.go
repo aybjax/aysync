@@ -1,4 +1,4 @@
-package aysync
+package async
 
 import (
 	"context"

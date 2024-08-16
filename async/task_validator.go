@@ -1,6 +1,8 @@
-package aysync
+package async
 
-import "context"
+import (
+	"context"
+)
 import "golang.org/x/sync/errgroup"
 
 type taskAny interface {
@@ -39,12 +41,12 @@ func AreValid(ctx context.Context, tasks ...taskAny) error {
 
 func MapOnValid[T any](ctx context.Context, generator func() (T, error), tasks ...taskAny) Task[T] {
 	if generator == nil {
-		return newErrTask[T](ctx, ErrNilFuncEncountered)
+		return NewErrTask[T](ctx, ErrNilFuncEncountered)
 	}
 
 	err := AreValid(ctx, tasks...)
 	if err != nil {
-		return newErrTask[T](ctx, err)
+		return NewErrTask[T](ctx, err)
 	}
 
 	return NewTask(ctx, generator)

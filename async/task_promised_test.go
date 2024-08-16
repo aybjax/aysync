@@ -1,4 +1,4 @@
-package aysync
+package async
 
 import (
 	"context"
@@ -83,7 +83,7 @@ func TestMap(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			task := NewTask(tc.ctx, tc.taskGenerator)
-			promised := Map(tc.ctx, task, tc.mapper)
+			promised := FMap(tc.ctx, task, tc.mapper)
 			result, err := promised.Await()
 			require.Equal(t, result, tc.expected)
 			require.Equal(t, err, tc.err)
