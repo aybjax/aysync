@@ -1,10 +1,7 @@
 package async
 
-import (
-	"context"
-	"runtime"
-)
+import "runtime"
 
-func Await(_ context.Context) {
+func Await() {
 	runtime.Gosched()
 }
