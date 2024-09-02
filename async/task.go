@@ -8,8 +8,9 @@ import (
 
 var (
 	// ErrTaskTimeout could be removed in future
+	ErrParentTaskErrored    = errors.New("parent task returned error")
 	ErrTaskTimeout          = errors.New("task took too long to complete")
-	ErrTaskContextCancelled = errors.New("context cancelled")
+	ErrTaskContextCancelled = context.Canceled
 	ErrNilValueEncountered  = errors.New("null value encountered")
 	ErrNilFuncEncountered   = errors.New("null value encountered")
 )

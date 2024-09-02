@@ -19,8 +19,8 @@ func NewTask[T any](ctx context.Context, f func() (T, error)) Task[T] {
 		ctx = context.TODO()
 	}
 
-	var cancelFnx context.CancelFunc
-	ctx, cancelFnx = context.WithCancel(ctx)
+	var cancelFnx context.CancelCauseFunc
+	ctx, cancelFnx = context.WithCancelCause(ctx)
 	once := task[T]{}.createOnceFunc(ctx, cancelFnx, f)
 	go once()
 	runtime.Gosched()
@@ -31,7 +31,7 @@ func NewTask[T any](ctx context.Context, f func() (T, error)) Task[T] {
 	}
 }
 
-func (t task[T]) createOnceFunc(ctx context.Context, cancelFnx context.CancelFunc, f func() (T, error)) func() (T, error) {
+func (t task[T]) createOnceFunc(ctx context.Context, cancelFnx context.CancelCauseFunc, f func() (T, error)) func() (T, error) {
 	once := sync.OnceValues(func() (T, error) {
 		funcRes := make(chan *taskResult[T])
 		doneRes := make(chan *taskResult[T])
@@ -65,10 +65,10 @@ func (t task[T]) createOnceFunc(ctx context.Context, cancelFnx context.CancelFun
 		go func() {
 			select {
 			case result := <-funcRes:
-				if result.err != nil {
-					cancelFnx()
-				}
 				doneRes <- result
+				if result.err != nil {
+					cancelFnx(result.err)
+				}
 			case <-time.After(defaultTimeout):
 				doneRes <- &taskResult[T]{
 					err: ErrTaskTimeout,
